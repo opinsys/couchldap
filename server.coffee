@@ -9,6 +9,8 @@ require "colors"
 { isUIDFilter
   isAllFilter
   isUIDNumberFilter
+  isGroupFilterByMember
+  isGroupFilterByGIDNumber
   isMasterDN } = require "./ldapmatchers"
 
 isGuestUID = (uid) ->
@@ -25,9 +27,17 @@ server = ldap.createServer()
 
 usersDB = nano.db.use config.dbName
 
+# TODO: should be ignore on the ldap client level
+ignoreUsers =
+  lightdm: 1
+  root: 1
+  opinsys: 1
+  epeli: 1
 
 
 docCache = {}
+cachedGroups = []
+organisationGuests = {}
 
 usersDB.follow (since: "now"), (err, response) ->
   if docCache[response.id]
@@ -45,6 +55,7 @@ cachedFetch = (docID, cb) ->
 
   usersDB.get docID, (err, doc) ->
     docCache[docID] = [err, doc]
+    buildCachedGroups()
     if err
       console.error "Failed to fetch doc '#{ docID }'".red, err
     cb(err, doc)
@@ -86,18 +97,39 @@ getLDAPUser = (uid, pickAttrs, cb) ->
         attributes: attributes
 
 
+buildCachedGroups = ->
+
+  cachedGroups = []
+
+  if not docCache["groups"] then return
+
+  [err, cachedGroups] = docCache["groups"]
+
+  if err then return
+
+  for group, gidNumber of cachedGroups
+
+    ldapGroupDoc =
+      dn: "cn=#{ group },ou=Groups,dc=#{ config.orgKey },dc=fi"
+      attributes:
+        objectclass: "posixgroup"
+        displayname: group
+        cn: group
+        gidnumber: "" + gidNumber
+        memberuid: []
+
+    for k, cacheDoc of docCache when k.slice(0,4) is "user"
+      [err, doc] = cacheDoc
+      if err then continue
+
+      for userGroup in doc.groups
+        if userGroup is group
+          ldapGroupDoc.attributes.memberuid.push(doc.username)
+
+    cachedGroups.push(ldapGroupDoc)
+    return cachedGroups
 
 
-# TODO: should be ignore on the ldap client level
-ignoreUsers =
-  lightdm: 1
-  root: 1
-  opinsys: 1
-  epeli: 1
-
-
-
-organisationGuests = {}
 
 
 getGuestData = (uid, orgKey, password, cb) ->
@@ -135,6 +167,8 @@ server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
 
   console.info "NEW LOGIN", "Login: #{ req.dn.toString() } PASS: #{ req.credentials }"
 
+
+
   # if req.dn.rdns[0].ou is "Master"
   #   console.info "deny master"
   #   return next new ldap.InvalidCredentialsError
@@ -148,10 +182,6 @@ server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
 
 
 sendUserByUID = (uid, req, res) ->
-
-  if uid.match /^[0-9]+$/
-    debugger
-    throw new Error "sdafad"
 
   if not uid
     throw new Error "null uid"
@@ -186,7 +216,6 @@ sendUserByUIDNumber = (uidNumber, req, res) ->
 
     if parseInt(doc.id, 10) is uidNumber
       found = true
-      console.info "Found by uid!", doc
       sendUserByUID(doc.username, req, res)
       break
 
@@ -210,15 +239,17 @@ server.search "ou=People,dc=#{ config.orgKey },dc=fi", (req, res, next) ->
 
   if isUIDFilter(req.filter) and isMasterDN(bindDN)
     sendUserByUID(req.filter.filters[1].value, req, res)
+
   else if isUIDNumberFilter(req.filter) and isMasterDN(bindDN)
-    console.info "NUMBER #{ req.filter.toString() }".yellow
     sendUserByUIDNumber(
       parseInt(req.filter.filters[1].value, 10),
       req,
       res
     )
+
   else if isAllFilter(req.filter) and not isMasterDN(bindDN)
     sendSelf(req, res)
+
   else
     next()
 
@@ -248,25 +279,20 @@ groups = [
 
 ]
 
+
+
+
+
 server.search "ou=Groups,dc=#{ config.orgKey },dc=fi", (req, res, next) ->
   # console.info "------Groups Search by", res.connection.ldap.bindDN.toString()
   # console.info "Base", req.baseObject.toString()
-  console.info "GROUP Filter", req.filter.toString(), "Attributes", req.attributes
+  # console.info "GROUP Filter", req.filter.toString(), "Attributes", req.attributes
 
-  res.send
-    dn: "cn=Funny Guys,ou=Groups,dc=#{ config.orgKey },dc=fi"
-    attributes:
-      objectclass: "posixgroup"
-      displayname: "Funny Guys"
-      cn: "funny"
-      gidnumber: "513"
-      memberuid: [
-        "epeli"
-        "randomguy"
-      ]
+  for ldapGropDoc in cachedGroups
+    if req.filter.matches(ldapGropDoc.attributes)
+      res.send(ldapGropDoc)
 
   res.end()
-  next()
 
 server.search "dc=fi", (req, res, next) ->
   console.error "----Unhandled SEARCH by".red, res.connection.ldap.bindDN.toString()
