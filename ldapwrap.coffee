@@ -21,6 +21,7 @@ class LDAPWrap
         console.info "Cached doc '#{ response.id }' updated. Clearing."
         delete @docCache[response.id]
 
+  # @api private
   buildLdapGroups:  ->
 
     if not @docCache["groups"] then return
@@ -56,6 +57,9 @@ class LDAPWrap
 
     @groups = ldapGroups
 
+  # @api private
+  # @param {String} CouchDB document id
+  # @param {Function} callback(err, doc)
   cachedFetch: (docID, cb) ->
 
     if cachedDoc = @docCache[docID]
@@ -72,6 +76,10 @@ class LDAPWrap
         console.error "Failed to fetch doc '#{ docID }'".red, err
       cb(err, doc)
 
+  # @api public
+  # @param {String} uid
+  # @param {String} password
+  # @param {Function} callback(err, ok)
   validatePassword: (uid, password, cb) ->
     @cachedFetch "user-" + uid, (err, doc) ->
       return cb err if err
@@ -82,6 +90,11 @@ class LDAPWrap
   # When this is called the UID numbers should be all in the cache, because the
   # login procedure has already fetched it by UID few times. There should be
   # never a need to query these from the database.
+  #
+  # @api public
+  # @param {String} uid
+  # @param {Number} UID Number
+  # @return {String} UID
   cachedUIDNumbertoUID: (uidNumber) ->
     uidNumber = parseInt(uidNumber, 10)
 
@@ -97,6 +110,11 @@ class LDAPWrap
       if parseInt(doc.id, 10) is uidNumber
         return doc.username
 
+  # @api public
+  # @param {String} uid
+  # @param {String} uid
+  # @param {Array} list of attributes
+  # @param {Function} callback(err, user)
   getUser: (uid, pickAttrs, cb) ->
 
     @cachedFetch "user-#{ uid }", (err, doc) =>
