@@ -2,6 +2,12 @@
 _  = require "underscore"
 
 
+# Wrapper for CouchDB nano driver which caches documents and transforms them to
+# format required by ldapjs
+#
+# @param {nano object}
+# @param {String} organisation key
+# @return {LDAPWrap}
 class LDAPWrap
 
   constructor: (@db, @orgKey) ->
@@ -9,10 +15,10 @@ class LDAPWrap
     @ldapGroups = []
     @docCache = {}
 
-    @db.follow (since: "now"), (err, response) ->
-      if docCache[response.id]
+    @db.follow (since: "now"), (err, response) =>
+      if @docCache[response.id]
         console.info "Cached doc '#{ response.id }' updated. Clearing."
-        delete docCache[response.id]
+        delete @docCache[response.id]
 
   buildLdapGroups:  ->
 

@@ -3,7 +3,6 @@ assert = require "assert"
 ldap = require "ldapjs"
 _  = require "underscore"
 nano = require("nano")("http://localhost:5984")
-clone = require "clone"
 require "colors"
 
 
