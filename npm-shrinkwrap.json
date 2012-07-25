@@ -97,6 +97,9 @@
     },
     "supervisor": {
       "version": "0.4.1"
+    },
+    "csv": {
+      "version": "0.0.17"
     }
   }
 }
