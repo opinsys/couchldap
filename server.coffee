@@ -72,10 +72,16 @@ getLDAPUser = (uid, pickAttrs, cb) ->
     getGroups (err, groupMap) ->
       return cb err if err
 
+      for group in doc.groups
+        if not groupMap[group]
+          console.error "User #{ doc.username } has invalid group #{ group }".red
+
+
       primaryGroup = doc.groups[0]
       gidNumber = groupMap[primaryGroup]
       if not gidNumber?
         return cb new Error "Cannot find gidNumber for group #{ primaryGroup }"
+
 
       attributes =
         objectclass: "posixaccount"
@@ -103,11 +109,13 @@ buildCachedGroups = ->
 
   if not docCache["groups"] then return
 
-  [err, cachedGroups] = docCache["groups"]
+  [err, groups] = docCache["groups"]
 
   if err then return
 
-  for group, gidNumber of cachedGroups
+  for group, gidNumber of groups
+
+    if group[0] is "_" then continue
 
     ldapGroupDoc =
       dn: "cn=#{ group },ou=Groups,dc=#{ config.orgKey },dc=fi"
@@ -127,7 +135,8 @@ buildCachedGroups = ->
           ldapGroupDoc.attributes.memberuid.push(doc.username)
 
     cachedGroups.push(ldapGroupDoc)
-    return cachedGroups
+
+  return cachedGroups
 
 
 
@@ -287,6 +296,7 @@ server.search "ou=Groups,dc=#{ config.orgKey },dc=fi", (req, res, next) ->
   # console.info "------Groups Search by", res.connection.ldap.bindDN.toString()
   # console.info "Base", req.baseObject.toString()
   # console.info "GROUP Filter", req.filter.toString(), "Attributes", req.attributes
+
 
   for ldapGropDoc in cachedGroups
     if req.filter.matches(ldapGropDoc.attributes)
