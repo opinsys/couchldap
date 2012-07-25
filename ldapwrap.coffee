@@ -1,5 +1,6 @@
 
 _  = require "underscore"
+ssha = require "./ssha"
 
 
 # Wrapper for CouchDB nano driver which caches documents and transforms them to
@@ -70,6 +71,13 @@ class LDAPWrap
       if err
         console.error "Failed to fetch doc '#{ docID }'".red, err
       cb(err, doc)
+
+  validatePassword: (uid, password, cb) ->
+    @cachedFetch "user-" + uid, (err, doc) ->
+      return cb err if err
+      debugger
+      cb null, ssha.verify(password, doc.password)
+
 
   # When this is called the UID numbers should be all in the cache, because the
   # login procedure has already fetched it by UID few times. There should be

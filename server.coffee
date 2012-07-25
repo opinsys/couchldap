@@ -2,7 +2,6 @@
 assert = require "assert"
 ldap = require "ldapjs"
 _  = require "underscore"
-nano = require("nano")("http://localhost:5984")
 require "colors"
 
 
@@ -23,6 +22,7 @@ do ->
   config.localCouchURL = "http://localhost:5984/#{ config.dbName }"
 
 
+nano = require("nano")("http://localhost:5984")
 server = ldap.createServer()
 usersDB = nano.db.use(config.dbName)
 ldapWrap = require("./ldapwrap")(usersDB, config.orgKey)
@@ -67,7 +67,29 @@ server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
   #   console.info "DENY ROOT"
   #   return next new ldap.InvalidCredentialsError
 
-  console.info "NEW LOGIN", "Login: #{ req.dn.toString() } PASS: #{ req.credentials }"
+
+  if isMasterDN(req.dn)
+    if req.credentials is config.localMasterPassword
+      res.end()
+      return next()
+    else
+      console.info "Bad master password"
+      return next new ldap.InvalidCredentialsError
+
+  else
+    uid = req.dn.rdns[0].couchuser
+    ldapWrap.validatePassword uid, req.credentials, (err, ok) ->
+
+      if err
+        console.error "Failed to validate password for #{ uid }"
+        return next new ldap.OperationsError "internal error"
+
+      if ok
+        res.end()
+        return next()
+      else
+        console.info "Bad password for #{ uid }"
+        next new ldap.InvalidCredentialsError
 
 
 
