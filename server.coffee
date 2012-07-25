@@ -59,14 +59,6 @@ getGuestData = (uid, orgKey, password, cb) ->
 
 
 server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
-  # if req.dn.toString() isnt 'cn=root' or req.credentials isnt 'secret'
-  #   console.error "BAD", req.dn.toString(), req.credentials
-  #   return next new ldap.InvalidCredentialsError
-
-  # if req.dn.toString() is 'cn=root'
-  #   console.info "DENY ROOT"
-  #   return next new ldap.InvalidCredentialsError
-
 
   if isMasterDN(req.dn)
     if req.credentials is config.localMasterPassword
@@ -90,16 +82,6 @@ server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
       else
         console.info "Bad password for #{ uid }"
         next new ldap.InvalidCredentialsError
-
-
-
-  # if req.dn.rdns[0].ou is "Master"
-  #   console.info "deny master"
-  #   return next new ldap.InvalidCredentialsError
-
-  res.end()
-  next()
-
 
 
 
