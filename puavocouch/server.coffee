@@ -7,7 +7,6 @@ config = require "../config"
 
 
 nano = require("nano")("http://#{ config.couchMaster }:5984")
-nano.use(config.orgKey)
 
 app = express.createServer()
 
