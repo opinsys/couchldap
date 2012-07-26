@@ -43,6 +43,13 @@ isMasterDN = schema
     2: dc: "fi"
     length: 3
 
+isGuestDN = schema
+  rdns:
+    0: couchuser: /.+@.+/
+    1: dc: String # Organisation key
+    2: dc: "fi"
+    length: 3
+
 isGroupFilterByGIDNumber = schema
   type: "and"
   filters:
@@ -77,11 +84,13 @@ isGroupFilterByMember = schema
           attribute: "member"
           value: String
 
+
 module.exports =
   isUIDFilter: isUIDFilter
   isAllFilter: isAllFilter
   isUIDNumberFilter: isUIDNumberFilter
   isMasterDN: isMasterDN
+  isGuestDN: isGuestDN
   isGroupFilterByMember: isGroupFilterByMember
   isGroupFilterByGIDNumber: isGroupFilterByGIDNumber
 
@@ -95,23 +104,26 @@ if require.main is module
   uidNumberFilter = ldap.parseFilter "(&(objectclass=posixaccount)(uidnumber=11542))"
 
 
-  assert.ok isUIDFilter uidFilter
-  assert.ok isUIDNumberFilter uidNumberFilter
+  assert isUIDFilter uidFilter
+  assert isUIDNumberFilter uidNumberFilter
 
-  assert.ok not isUIDFilter uidNumberFilter
-  assert.ok not isUIDNumberFilter uidFilter
+  assert not isUIDFilter uidNumberFilter
+  assert not isUIDNumberFilter uidFilter
 
 
   allFilter = ldap.parseFilter "(objectclass=*)"
   assert.ok isAllFilter allFilter
 
   masterDN = ldap.parseDN 'ou=Master, dc=kehitys, dc=fi'
-  assert.ok isMasterDN masterDN
+  assert isMasterDN masterDN
 
 
   groupFilterByGIDNumber = ldap.parseFilter "(&(objectclass=posixgroup)(gidnumber=1005))"
-  assert.ok isGroupFilterByGIDNumber groupFilterByGIDNumber
+  assert isGroupFilterByGIDNumber groupFilterByGIDNumber
 
   groupFilterByMember = ldap.parseFilter "(&(objectclass=posixgroup)(|(memberuid=aarlorvilehto)(member=couchuser=aarlorvilehto, ou=People, dc=kehitys, dc=fi)))"
-  assert.ok isGroupFilterByMember groupFilterByMember
+  assert isGroupFilterByMember groupFilterByMember
 
+
+  guestDN = ldap.parseDN 'couchuser=foo@toimisto, dc=kehitys, dc=fi'
+  assert isGuestDN guestDN

@@ -10,10 +10,9 @@ require "colors"
   isUIDNumberFilter
   isGroupFilterByMember
   isGroupFilterByGIDNumber
+  isGuestDN
   isMasterDN } = require "./ldapmatchers"
 
-isGuestUID = (uid) ->
-  !! uid.match /.+@.+/
 
 config = require "./config"
 do ->
