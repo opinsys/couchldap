@@ -1,9 +1,10 @@
 
+# Tool for populating CouchDB master with some random test data.
 
 csv = require "csv"
+async = require "async"
 config = require "./config"
 ssha = require "ssha"
-console.info ssha
 
 do ->
   config.dbName = "#{ config.orgKey }-users"
@@ -11,8 +12,19 @@ do ->
   config.localCouchURL = "http://localhost:5984/#{ config.dbName }"
 
 nano = require("nano")("http://#{ config.couchMaster }:5984/")
+
 nano.db.create(config.dbName)
-masterCouch = nano.db.use(config.dbName)
+kehitysUsers = nano.db.use(config.dbName)
+
+
+nano.db.create("toimisto-users")
+toimistoUsers = nano.db.use("toimisto-users")
+
+
+q = async.queue (task, cb) ->
+  task(cb)
+, 5
+
 
 id = 10000
 
@@ -21,13 +33,50 @@ usedNames = {}
 console.info "Going to insert test data to #{ config.masterCouchURL }"
 console.info "This might take a while..."
 
-masterCouch.insert
-  student: 1006
-  teacher: 1007
-  users: 1005
-, "groups", (err, doc) ->
-  if err
-    console.info "Group insertion failed because", err
+[kehitysUsers, toimistoUsers].forEach (db) ->
+  q.push (done) ->
+    db.insert
+      student: 1006
+      teacher: 1007
+      users: 1005
+    , "groups", (err, doc) ->
+      if err
+        console.info "Group insertion failed because", err
+      done()
+
+
+[
+  username: "epeli"
+  gender: "male"
+  givenName: "Esa-Matti"
+  surname: "Suuronen"
+  streetAddress: null
+  city: null
+  zipCode: null
+  email: null
+  password: ssha.create("kala")
+  loginShell: "/bin/bash"
+  groups: [ "users", "student", "admin" ]
+  id: ++id
+,
+  username: "employee"
+  gender: "male"
+  givenName: "John"
+  surname: "Doe"
+  streetAddress: null
+  city: null
+  zipCode: null
+  email: null
+  password: ssha.create("kala")
+  loginShell: "/bin/bash"
+  groups: [ "users", "student", "admin" ]
+  id: ++id
+].forEach (doc) -> q.push (done) ->
+  toimistoUsers.insert doc, "user-#{ doc.username }", (err, doc) ->
+    if err
+      console.error "Failed to insert", doc, err
+    done()
+
 
 csv().fromPath(__dirname + "/testdata.csv").on "data", (row) ->
   doc =
@@ -53,10 +102,14 @@ csv().fromPath(__dirname + "/testdata.csv").on "data", (row) ->
   usedNames[username] = true
   doc.username = username
 
-  masterCouch.insert doc, "user-#{ doc.username }", (err, doc) ->
-    if err
-      console.info "Failed to insert", doc, "because", err
+  q.push (done) ->
+    kehitysUsers.insert doc, "user-#{ doc.username }", (err, doc) ->
+      if err
+        console.info "Failed to insert", doc, "because", err
+      done()
 
 
+q.drain = ->
+  console.info "All done"
 
 
