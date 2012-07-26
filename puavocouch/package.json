@@ -1,0 +1,16 @@
+{
+    "name": "puavo"
+  , "version": "0.0.1"
+  , "private": true
+  , "scripts": {
+     "start": "node_modules/.bin/coffee puavo.coffee"
+    }
+  , "dependencies": {
+      "coffee-script": ""
+      , "express": ""
+      , "ssha": ""
+      , "nano": ""
+      , "underscore": ""
+      , "supervisor": ""
+  }
+}
