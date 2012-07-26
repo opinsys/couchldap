@@ -2,10 +2,7 @@
 express = require "express"
 ssha = require "ssha"
 
-# XXX
-config = require "../config"
-
-
+config = require "../config" # XXX
 nano = require("nano")("http://#{ config.couchMaster }:5984")
 
 app = express.createServer()
@@ -44,10 +41,8 @@ requireAuth = (req, res, next) ->
 
 
 app.use(parseBasicAuth)
-app.use(requireAuth)
 
-
-app.get "/whoami", (req, res) ->
+app.get "/whoami", requireAuth, (req, res) ->
   res.json req.user.data
 
-app.listen 1234
+app.listen 1234, -> console.info "Puavo listening on 1234"
