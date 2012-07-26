@@ -2,7 +2,7 @@
 
 csv = require "csv"
 config = require "./config"
-ssha = require "./ssha"
+ssha = require "ssha"
 console.info ssha
 
 do ->

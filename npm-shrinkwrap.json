@@ -54,6 +54,9 @@
         }
       }
     },
+    "ssha": {
+      "version": "1.0.1"
+    },
     "nano": {
       "version": "3.1.0",
       "dependencies": {

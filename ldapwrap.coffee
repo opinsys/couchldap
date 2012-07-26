@@ -1,6 +1,6 @@
 
 _  = require "underscore"
-ssha = require "./ssha"
+ssha = require "ssha"
 
 
 # Wrapper for CouchDB nano driver which caches documents and transforms them to

@@ -8,6 +8,7 @@
   , "dependencies": {
       "coffee-script": ""
       , "ldapjs": ""
+      , "ssha": ""
       , "nano": ""
       , "js-schema": ""
       , "underscore": ""
