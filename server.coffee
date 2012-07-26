@@ -24,7 +24,7 @@ do ->
 nano = require("nano")("http://localhost:5984")
 server = ldap.createServer()
 usersDB = nano.db.use(config.dbName)
-ldapWrap = require("./ldapwrap")(usersDB, config.orgKey)
+ldapWrap = require("./ldapwrap")(usersDB, config.orgKey, config.puavo)
 
 # TODO: should be ignore on the ldap client level
 ignoreUsers =
@@ -33,54 +33,61 @@ ignoreUsers =
   opinsys: 1
   epeli: 1
 
-getGuestData = (uid, orgKey, password, cb) ->
-  if res = organisationGuests[uidWithOrg]
-    return cb res...
 
-  # Fetch user data from remote organisation with the password
-  if password
-    # TODO
+
+# master ie. local organisation desktop/client master
+loginMaster = (req, res, next) ->
+  if req.credentials is config.localMasterPassword
+    res.end()
+    return next()
   else
-    # Respond with a dummy account (/bin/false) until we have proper data
-    cb null,
-      dn: "couchUser=#{ uid },ou=People,dc=#{ orgKey },dc=fi"
-      attributes:
-        objectclass: "posixaccount"
-        cn: "Guest #{ uid } from #{ orgKey }"
-        uid: uid
-        givenName: "Guest #{ uid } from #{ orgKey }"
-        sn: "Guest #{ uid } from #{ orgKey }"
-        uidnumber: "11542"
-        displayName: "Guest #{ uid } from #{ orgKey }"
-        homeDirectory: "/home/guests/#{ uid }-#{ orgKey }"
-        gidnumber: "1005"
-        loginShell: "/bin/false"
+    console.info "Bad master password"
+    return next new ldap.InvalidCredentialsError
 
 
-server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
 
-  if isMasterDN(req.dn)
-    if req.credentials is config.localMasterPassword
+# Guest user from another organisation
+loginGuest = (req, res, next) ->
+  guest = req.dn.rdns[0].couchuser
+  console.info "Logging in guest!", guest, req.credentials
+
+  ldapWrap.remoteLogin guest, req.credentials, (err, ok) ->
+    if err
+      console.error "Failed to login remote guest #{ guest }", err
+      return next ldap.OperationsError "internal error"
+
+    if ok
+      res.end()
+      next()
+    else
+      return next ldap.InvalidCredentialsError
+
+
+# Local user. Student, teacher, etc.
+loginLocalUser = (req, res, next) ->
+  uid = req.dn.rdns[0].couchuser
+
+  ldapWrap.validatePassword uid, req.credentials, (err, ok) ->
+    if err
+      console.error "Failed to validate password for #{ uid }", req.dn.toString()
+      return next new ldap.OperationsError "internal error"
+
+    if ok
       res.end()
       return next()
     else
-      console.info "Bad master password"
-      return next new ldap.InvalidCredentialsError
+      console.info "Bad password for #{ uid }"
+      next new ldap.InvalidCredentialsError
 
+server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
+
+
+  if isMasterDN(req.dn)
+    return loginMaster(req, res, next)
+  else if isGuestDN(req.dn)
+    return loginGuest(req, res, next)
   else
-    uid = req.dn.rdns[0].couchuser
-    ldapWrap.validatePassword uid, req.credentials, (err, ok) ->
-
-      if err
-        console.error "Failed to validate password for #{ uid }"
-        return next new ldap.OperationsError "internal error"
-
-      if ok
-        res.end()
-        return next()
-      else
-        console.info "Bad password for #{ uid }"
-        next new ldap.InvalidCredentialsError
+    return loginLocalUser(req, res, next)
 
 
 
@@ -107,8 +114,10 @@ sendUserByUIDNumber = (uidNumber, req, res) ->
     sendUserByUID(uid, req, res)
   else
     console.error "Could not find uid for number #{ uidNumber }".red
+    res.end()
 
 
+# Send user owning this connection
 sendSelf = (req, res) ->
   dn = res.connection.ldap.bindDN
   uid = dn.rdns[0].couchuser
@@ -116,10 +125,6 @@ sendSelf = (req, res) ->
 
 
 server.search "ou=People,dc=#{ config.orgKey },dc=fi", (req, res, next) ->
-  # console.info "----People Search by", res.connection.ldap.bindDN.toString()
-  # console.info "Base", req.baseObject.toString()
-  # console.info "Filter", req.filter.toString(), "Attributes", req.attributes
-  # console.info "Filter", req.filter.toString()
 
   bindDN = res.connection.ldap.bindDN
 
