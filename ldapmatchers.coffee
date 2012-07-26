@@ -46,9 +46,10 @@ isMasterDN = schema
 isGuestDN = schema
   rdns:
     0: couchuser: /.+@.+/
-    1: dc: String # Organisation key
-    2: dc: "fi"
-    length: 3
+    1: ou: "People"
+    2: dc: String # Organisation key
+    3: dc: "fi"
+    length: 4
 
 isGroupFilterByGIDNumber = schema
   type: "and"
@@ -125,5 +126,5 @@ if require.main is module
   assert isGroupFilterByMember groupFilterByMember
 
 
-  guestDN = ldap.parseDN 'couchuser=foo@toimisto, dc=kehitys, dc=fi'
+  guestDN = ldap.parseDN "couchuser=epeli@toimisto, ou=People, dc=kehitys, dc=fi"
   assert isGuestDN guestDN
