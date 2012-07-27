@@ -74,13 +74,16 @@ class LDAPWrap
         console.info "Remote login failed for", guest, password
         return cb err
 
+      if res.statusCode is 401
+        return cb null, false
+
       user = JSON.parse(body)
 
       # TODO: remote groups
       # For now just support group users for remote users
       user.groups = [ "users" ]
 
-      # Override username with guest style uid
+      # Override username with guest style uid (uid@org)
       user.username = guest
 
       @docCache["guest/" + guest] = [null, user]
@@ -143,6 +146,7 @@ class LDAPWrap
       console.info "Requested remote UID number #{ uidNumber } for #{ guest }".green
       cb null, uidNumber
 
+  # Build cached view of groups for ldapjs
   # @api private
   buildLdapGroups:  ->
 

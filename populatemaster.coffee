@@ -1,10 +1,11 @@
 
 # Tool for populating CouchDB master with some random test data.
 
-csv = require "csv"
 async = require "async"
-config = require "./config"
+csv = require "csv"
 ssha = require "ssha"
+
+config = require "./config"
 
 do ->
   config.dbName = "#{ config.orgKey }-users"
@@ -36,6 +37,7 @@ console.info "This might take a while..."
 [kehitysUsers, toimistoUsers].forEach (db) ->
   q.push (done) ->
     db.insert
+      guests: 1008
       student: 1006
       teacher: 1007
       users: 1005

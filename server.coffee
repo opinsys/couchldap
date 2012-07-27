@@ -60,6 +60,7 @@ loginGuest = (req, res, next) ->
       res.end()
       next()
     else
+      console.info "Bad password for remote user #{ guest }"
       return next ldap.InvalidCredentialsError
 
 
