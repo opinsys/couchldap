@@ -22,11 +22,15 @@ class LDAPWrap
     # TODO: Invalidate at some point
     @guestUIDNumberCache = {}
 
+
+  # @api private
+  follow: ->
     @db.follow (since: "now"), (err, response) =>
-      if @docCache[response.id]
+      if err
+        console.error "Change monitor failed!", err
+      else if @docCache[response.id]
         console.info "Cached doc '#{ response.id }' updated. Clearing."
         delete @docCache[response.id]
-
 
   # Get cached guest data or temp dummy user. Dummy user is served until the
   # user has logged in once using a valid uid and password with `remoteLogin`
@@ -122,8 +126,8 @@ class LDAPWrap
           homeDirectory: "/home/guests/#{ uid }-#{ organisation }"
           gidnumber: "1005"
           # Do not allow login with this
-          # loginShell: "/bin/false"
-          loginShell: "/usr/bin/python"
+          loginShell: "/bin/false"
+          # loginShell: "/usr/bin/python" # for testing
 
   # @api private
   # @param {String} guestUID@organisation

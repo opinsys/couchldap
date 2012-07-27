@@ -42,7 +42,7 @@ loginMaster = (req, res, next) ->
     res.end()
     return next()
   else
-    console.info "Bad master password"
+    console.info "Bad master password. Check client /etc/nslcd.conf"
     return next new ldap.InvalidCredentialsError
 
 
@@ -168,8 +168,16 @@ console.info "Going to replicate changes from #{ config.masterCouchURL } to #{ c
 nano.db.replicate(
   config.masterCouchURL,
   config.localCouchURL,
-  continuous: true,
+  {
+    continuous: true
+    create_target: true
+  },
   (err, response) ->
-    console.info "Replication setup", err, response
+    if err
+      console.error "Replication setup failed!", err
+      process.exit 1
+
+    ldapWrap.follow()
+    console.info "Replication setup", response
 )
 
