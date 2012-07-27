@@ -6,30 +6,34 @@ Experimental LDAP server implementation for `libpam-ldapd` and
 
 ## Setup
 
-### CouchMaster Server
+This demo setup requires two servers, a master server and a slave server for a
+*kehitys* organisation, and one or more desktop clients for the slave server.
 
-Get Node.js and Apache CouchDB 1.2
+### Master Server with PuavoCouch
 
-Get CouchLDAP repo
+Contains CouchDB master and PuavoCouch.
+
+Install Node.js 0.6 and Apache CouchDB 1.2.
+
+Get CouchLDAP repo and go to PuavoCouch subdirectory:
 
     git clone git://github.com/opinsys/couchldap.git
-    cd couchldap
+    cd couchldap/puavocouch/
     npm install
 
-Populate CouchMaster db with data
+Populate CouchMaster db with data:
 
-    node_modules/.bin/coffee populatemaster.coffee http://localhost:5984/
+    npm run-script populate
 
-Setup puavoCouch
+Start PuavoCouch:
 
-    cd puavocouch
-    npm install
-    npm start # Keep this running
+    npm start
 
+### Slave Server with CouchLDAP
 
-### CouchLDAP Server for local organisation
+Contains CouchDB slave and CouchLDAP.
 
-Get Node.js and Apache CouchDB 1.2
+Install Node.js 0.6 and Apache CouchDB 1.2.
 
 Get CouchLDAP repo
 
@@ -42,7 +46,7 @@ Create `config.json`
 ```json
 {
     "orgKey": "kehitys"
-    , "couchMaster": "couchmaster ip"
+    , "couchMaster": "<master server ip>"
     , "couchLDAPPassword": "secret"
 }
 ```
@@ -51,7 +55,10 @@ And start CouchLDAP
 
     npm start
 
-### Desktop client setup
+This will automatically replicate *kehitys* organisation data from the Master
+Server.
+
+### Desktop Client Setup
 
 For Ubuntu Precise Pangolin
 

@@ -5,23 +5,14 @@ async = require "async"
 csv = require "csv"
 ssha = require "ssha"
 
-config = require "./config"
-
-
-console.info process.argv
-
-masterCouchURL = process.argv[2]
-
-if not masterCouchURL
-  console.error "CouchMaster URL required as first param"
-  process.exit 1
-
+masterCouchURL = "http://localhost:5984/"
+console.info "Going to insert test data to #{ masterCouchURL }"
+console.info "This might take a while..."
 
 nano = require("nano")(masterCouchURL)
 
 nano.db.create("kehitys-users")
 kehitysUsers = nano.db.use("kehitys-users")
-
 
 nano.db.create("toimisto-users")
 toimistoUsers = nano.db.use("toimisto-users")
@@ -36,8 +27,6 @@ id = 10000
 
 usedNames = {}
 
-console.info "Going to insert test data to #{ masterCouchURL }"
-console.info "This might take a while..."
 
 [kehitysUsers, toimistoUsers].forEach (db) ->
   q.push (done) ->

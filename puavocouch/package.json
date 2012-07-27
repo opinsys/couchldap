@@ -4,6 +4,7 @@
   , "private": true
   , "scripts": {
      "start": "node_modules/.bin/coffee server.coffee"
+     , "populate": "node_modules/.bin/coffee populatemaster.coffee"
     }
   , "dependencies": {
       "coffee-script": ""
@@ -12,5 +13,7 @@
       , "nano": ""
       , "underscore": ""
       , "supervisor": ""
+      , "csv": ""
+      , "async": ""
   }
 }
