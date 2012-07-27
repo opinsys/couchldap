@@ -2,8 +2,7 @@
 express = require "express"
 ssha = require "ssha"
 
-config = require "../config" # XXX
-nano = require("nano")("http://#{ config.couchMaster }:5984")
+nano = require("nano")("http://localhost:5984")
 
 app = express.createServer()
 
