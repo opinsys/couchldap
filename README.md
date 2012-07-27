@@ -25,6 +25,8 @@ Populate CouchMaster db with data:
 
     npm run-script populate
 
+Password for everybody is *kala*
+
 Start PuavoCouch:
 
     npm start
