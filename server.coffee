@@ -19,6 +19,7 @@ do ->
   config.dbName = "#{ config.orgKey }-users"
   config.masterCouchURL = "http://#{ config.couchMaster }:5984/#{ config.dbName }"
   config.localCouchURL = "http://localhost:5984/#{ config.dbName }"
+  config.puavo = "http://#{ config.couchMaster }:1234"
 
 
 nano = require("nano")("http://localhost:5984")
@@ -37,7 +38,7 @@ ignoreUsers =
 
 # master ie. local organisation desktop/client master
 loginMaster = (req, res, next) ->
-  if req.credentials is config.localMasterPassword
+  if req.credentials is config.couchLDAPPassword
     res.end()
     return next()
   else
