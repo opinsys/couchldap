@@ -7,15 +7,20 @@ ssha = require "ssha"
 
 config = require "./config"
 
-do ->
-  config.dbName = "#{ config.orgKey }-users"
-  config.masterCouchURL = "http://#{ config.couchMaster }:5984/#{ config.dbName }"
-  config.localCouchURL = "http://localhost:5984/#{ config.dbName }"
 
-nano = require("nano")("http://#{ config.couchMaster }:5984/")
+console.info process.argv
 
-nano.db.create(config.dbName)
-kehitysUsers = nano.db.use(config.dbName)
+masterCouchURL = process.argv[2]
+
+if not masterCouchURL
+  console.error "CouchMaster URL required as first param"
+  process.exit 1
+
+
+nano = require("nano")(masterCouchURL)
+
+nano.db.create("kehitys-users")
+kehitysUsers = nano.db.use("kehitys-users")
 
 
 nano.db.create("toimisto-users")
@@ -31,7 +36,7 @@ id = 10000
 
 usedNames = {}
 
-console.info "Going to insert test data to #{ config.masterCouchURL }"
+console.info "Going to insert test data to #{ masterCouchURL }"
 console.info "This might take a while..."
 
 [kehitysUsers, toimistoUsers].forEach (db) ->
