@@ -73,7 +73,7 @@ For Ubuntu Precise Pangolin
     gid nslcd
 
     # CouchLDAP server
-    uri ldap://couchldapserver:1389/
+    uri ldap://<CouchLDAP ip>:1389/
 
     # The search base that will be used for all queries.
     base dc=kehitys,dc=fi

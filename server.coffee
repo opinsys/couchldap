@@ -81,6 +81,7 @@ loginLocalUser = (req, res, next) ->
       console.info "Bad password for #{ uid }"
       next new ldap.InvalidCredentialsError
 
+
 server.bind "dc=#{ config.orgKey },dc=fi", (req, res, next) ->
 
 

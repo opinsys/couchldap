@@ -1,8 +1,10 @@
+# Various duck type checking functions for ldapjs Filters and DNs.
 
 schema = require "js-schema"
 
 
-
+# @param {Filter}
+# @return {Boolean}
 isUIDFilter = schema
   type: "and"
   filters:
@@ -17,6 +19,8 @@ isUIDFilter = schema
       value: String
 
 
+# @param {Filter}
+# @return {Boolean}
 isUIDNumberFilter = schema
   type: "and"
   filters:
@@ -31,11 +35,15 @@ isUIDNumberFilter = schema
       value: String
 
 
+# @param {Filter}
+# @return {Boolean}
 isAllFilter = schema
   type: "present"
   attribute: "objectclass"
 
 
+# @param {DN}
+# @return {Boolean}
 isMasterDN = schema
   rdns:
     0: ou: "Master"
@@ -43,6 +51,8 @@ isMasterDN = schema
     2: dc: "fi"
     length: 3
 
+# @param {DN}
+# @return {Boolean}
 isGuestDN = schema
   rdns:
     0: couchuser: /.+@.+/
@@ -51,6 +61,8 @@ isGuestDN = schema
     3: dc: "fi"
     length: 4
 
+# @param {Filter}
+# @return {Boolean}
 isGroupFilterByGIDNumber = schema
   type: "and"
   filters:
@@ -64,6 +76,8 @@ isGroupFilterByGIDNumber = schema
       attribute: "gidnumber"
       value: /^[0-9]+$/
 
+# @param {Filter}
+# @return {Boolean}
 isGroupFilterByMember = schema
   type: "and"
   filters:
@@ -96,6 +110,7 @@ module.exports =
   isGroupFilterByGIDNumber: isGroupFilterByGIDNumber
 
 
+# Poor man's test cases
 if require.main is module
 
   assert = require "assert"

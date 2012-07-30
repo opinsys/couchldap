@@ -23,7 +23,9 @@ class LDAPWrap
     @guestUIDNumberCache = {}
 
 
-  # @api private
+  # Start following changes from master. 
+  #
+  # @api public
   follow: ->
     @db.follow (since: "now"), (err, response) =>
       if err
@@ -33,7 +35,7 @@ class LDAPWrap
         delete @docCache[response.id]
 
   # Get cached guest data or temp dummy user. Dummy user is served until the
-  # user has logged in once using a valid uid and password with `remoteLogin`
+  # user has logged in once using a valid uid and password with `remoteLogin`.
   #
   # @api public
   # @param {String} uid@organisation
@@ -61,7 +63,7 @@ class LDAPWrap
   # Do remote to login to another organisation with the user's uid and
   # password. This makes the user data available as read only without password.
   # This is required because libpam-ldapd or libnss-ldapd wants to access that
-  # data without a password.
+  # data before user actually enters password.
   #
   # @api public
   # @param {String} guestUID@organisation
@@ -90,7 +92,9 @@ class LDAPWrap
       # Override username with guest style uid (uid@org)
       user.username = guest
 
+      # Inject remote guest user to our cache
       @docCache["guest/" + guest] = [null, user]
+
       cb null, user
 
   # @api private
@@ -212,7 +216,6 @@ class LDAPWrap
   # @param {String} password
   # @param {Function} callback(err, ok)
   validatePassword: (uid, password, cb) ->
-    console.info "PW VAL", uid
     @cachedFetch "user-" + uid, (err, doc) ->
       return cb err if err
       cb null, ssha.verify(password, doc.password)
